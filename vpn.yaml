@@ -1,0 +1,14 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+  - vmd.yaml
+
+node_templates:
+    vpn-73:
+        type: comcast.sdwan.nodes.Vpn
+        properties:
+            name: { get_input: vpn_name }
+            organization_name: { get_input: organization_name }
+        relationships:
+            - type: comcast.sdwan.relationships.organization_connected_to_vmd
+              target: vmd

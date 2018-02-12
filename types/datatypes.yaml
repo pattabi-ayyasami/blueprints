@@ -1,0 +1,98 @@
+data_types:
+  comcast.sdwan.datatypes.VersaDirectorEndPoint:
+    properties:
+        management_address:
+          type: string
+          default: "96.116.57.31"
+        port:
+          type: integer
+          default: 9183
+        client_id:
+          default: "vode_rest"
+        user:
+          default: "Administrator"
+        password:
+          default: "nfV!Nads123Versa"
+        grant_type:
+          default: "password" 
+
+  comcast.sdwan.datatypes.ContactInformation:
+    properties:
+      phone:
+        type: string
+      email:
+        type: string
+
+  comcast.sdwan.datatypes.Location:
+    properties:
+      name:
+        type: string
+      site_name:
+        type: string
+      address1:
+        type: string
+      city:
+        type: string
+      state:
+        type: string
+      country:
+        type: string
+      longitude:
+        type: string
+      latitude:
+        type: string
+
+  comcast.sdwan.datatypes.ZTPInformation:
+     properties:
+       branch_id:
+         type: string
+       branch_key:
+         type: string
+       enable_ipv4:
+         type: boolean
+         default: true
+       wan_ip_address:
+         type: string
+       wan_gateway:
+         type: string
+       enable_ipv4_dhcp:
+         type: boolean
+         default: false
+       enable_ipv6:
+         type: boolean
+         default: false
+       enable_ipv6_dhcp:
+         type: boolean
+         default: false
+
+  comcast.sdwan.datatypes.FirewallZone:
+    properties:
+      zone_name:
+        type: string
+        description: wan / trust / untrust
+      versa_zone_name_pattern:
+        type: string
+        description: Intf-LAN-VPN-<VRF Id>-Zone | ptvi | RTI-WAN-<device clli>-Zone
+
+
+  comcast.sdwan.datatypes.FirewallRule:
+    properties:
+      ordinaml_number:
+        type: integer
+        description: Raning/Priority number of the rules in the firewall profile
+      name:
+        type: string
+      description:
+        type: string
+      source_zone:
+        type: string
+        description: should be FirewallZone.versa_zone_name_pattern
+      destination_zone:
+        type: string
+        description: should be FirewallZone.versa_zone_name_pattern
+      disposition:
+        type: string
+        description: accept / reject / drop
+      traffic_match:
+        required: false
+            

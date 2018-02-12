@@ -1,0 +1,72 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+node_templates:
+    accept-all-multizone:
+       type: comcast.versa.nodes.AccessPolicy
+       properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: [ {get_input: vpn_name}, "-AcceptAllMultiZone" ] }
+       relationships:
+            - type: cloudify.relationships.connected_to
+              target: vpn-site
+
+    accept-all-multizone-WAN-to-LAN:
+        type: comcast.versa.nodes.AccessPolicyRule
+        properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: ["WAN->", {get_input: vpn_name}, ":Allow"] }
+           description: { concat: ["Allow WAN to VRF ", {get_input: vpn_name}] }
+           policy_name: { get_property: ["accept-all-multizone", name] }
+           source_zone_list: ["ptvi"]
+           destination_zone_list: [ { concat: ["Intf-", "LAN-", {get_input: vpn_name}, "-Zone"] } ]
+           action: allow
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: accept-all-multizone
+
+    accept-all-multizone-LAN-to-WAN:
+        type: comcast.versa.nodes.AccessPolicyRule
+        properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: [{get_input: vpn_name}, "->WAN", ":Allow"] }
+           description: { concat: ["Allow VRF ", {get_input: vpn_name}, " to WAN"] }
+           policy_name: { get_property: ["accept-all-multizone", name] }
+           source_zone_list: [ { concat: ["Intf-LAN-", {get_input: vpn_name}, "-Zone"] } ]
+           destination_zone_list: ["ptvi"]
+           action: allow
+        relationships:
+           - type: cloudify.relationships.connected_to
+             target: accept-all-multizone
+
+    accept-all-multizone-Internet-to-LAN:
+        type: comcast.versa.nodes.AccessPolicyRule
+        properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: ["Internet->", {get_input: vpn_name}, ":Allow"] }
+           description: { concat: ["Allow Internet to VRF ", {get_input: vpn_name}] }
+           policy_name: { get_property: ["accept-all-multizone", name] }
+           source_zone_list: [ { concat: ["RTI-WAN-", {get_input: CLLI}, "-Zone"] } ]
+           destination_zone_list: [ { concat: ["Intf-LAN-", {get_input: vpn_name}, "-Zone"] } ]
+           action: allow
+        relationships:
+           - type: cloudify.relationships.connected_to
+             target: accept-all-multizone
+
+    accept-all-multizone-LAN-to-Internet:
+        type: comcast.versa.nodes.AccessPolicyRule
+        properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: [{get_input: vpn_name}, "->Internet", ":Allow"] }
+           description: { concat: ["Allow LAN ", {get_input: vpn_name}, " to Internet"] }
+           policy_name: { get_property: ["accept-all-multizone", name] }
+           source_zone_list: [ { concat: ["Intf-", "LAN-", {get_input: vpn_name}, "-Zone"] } ]
+           destination_zone_list: [ { concat: ["RTI-", "WAN-", {get_input: CLLI}, "-Zone"] } ]
+           action: allow
+        relationships:
+           - type: cloudify.relationships.connected_to
+             target: accept-all-multizone

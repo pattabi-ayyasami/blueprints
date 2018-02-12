@@ -1,0 +1,119 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+node_templates:
+    vnf-manager:
+        type: comcast.versa.nodes.VNFManager
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            ip_addresses: ["3.3.3.3/24", "4.4.4.4/24"]
+            management_interfaces: ["tvi-2/0", "tvi-3/0"]
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: uCPE
+
+
+
+    session:
+        type: comcast.versa.nodes.Session
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            reevaluate_reverse_flow: true
+            send_icmp_unreachable: true
+            tcp_send_reset: true
+            host_bound_service: true
+            check_tcp_syn: true
+            allow_unsupported_protocol: true
+            tcp_secure_reset: true
+            tcp_adjust_mss: {
+                "enable": true,
+                "mss": "1200",
+                "interface_type": "tunnel"
+            }
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: uCPE
+
+
+
+    services:
+        type: comcast.versa.nodes.SystemServices
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            www: "disabled"
+            cli-ssh: "disabled"
+            ssh: "enabled"
+            sftp: "disabled"
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: uCPE
+ 
+
+
+    external-aaa:
+        type: comcast.versa.nodes.ExternalAAA
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            action: "authentication"
+            use_remote_group: false
+            auth_order: "local-then-remote"
+            servers: [
+                {
+                    "host": "2.2.2.2",
+                    "routing_instance": "global",
+                    "key": "KEY"
+                }
+            ]
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: uCPE
+
+
+
+    ntp:
+        type: comcast.versa.nodes.NTP
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            servers: [
+                {
+                    "name": "2.2.2.2",
+                    "routing_instance": "Comcast-Control-VR",
+                    "enable": true,
+                    "version": "3",
+                    "source_interface": "tvi-0/8.0"
+                }
+            ]
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: uCPE
+ 
+
+
+    time-zone:
+        type: comcast.versa.nodes.TimeZone
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            time_zone: "America/Los_Angeles"
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: uCPE
+ 
+
+
+    service-options:
+        type: comcast.versa.nodes.ServiceOptions
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            buffer_parameters: {}
+            shaping: { "tc-token-bucket": true }
+            forwarding_queues: "16"
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: uCPE
+ 

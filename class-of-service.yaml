@@ -1,0 +1,116 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+node_templates:
+    qos-profile-2-queues-best-effort:
+        type: comcast.versa.nodes.QosProfile
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            name: "2-queues-best-effort"
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: vpn-site
+
+    qos-profile-2-queues-real-time:
+        type: comcast.versa.nodes.QosProfile
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            name: "2-queues-real-time"
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: vpn-site
+    
+    qos-policy-2-queues:
+        type: comcast.versa.nodes.QosPolicy
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            name: "2-queues-policy"
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: vpn-site
+
+    qos-policy-rule-real-time:
+        type: comcast.versa.nodes.QosPolicyRule
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            #policy_name: { get_property: [qos-policy-2-queues, name] }
+            name: "real-time"
+        relationships:
+            - type: comcast.sdwan.relationships.qos_policy_rule_reference_qos_profile
+              target: qos-profile-2-queues-real-time
+            - type: comcast.sdwan.relationships.qos_policy_rule_contained_in_qos_policy
+              target: qos-policy-2-queues
+
+    qos-policy-rule-best-effort:
+        type: comcast.versa.nodes.QosPolicyRule
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            #policy_name: { get_property: [qos-policy-2-queues, name] }
+            name: "best-effort"
+        relationships:
+            - type: comcast.sdwan.relationships.qos_policy_rule_reference_qos_profile
+              target: qos-profile-2-queues-best-effort
+            - type: comcast.sdwan.relationships.qos_policy_rule_contained_in_qos_policy
+              target: qos-policy-2-queues
+
+
+    qos-scheduler-2-queues-tc1:
+        type: comcast.versa.nodes.QosScheduler
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            name: "2-queues-scheduler-tc1"
+            transmit_rate_percentage: "100"
+            guaranteed_rate_percentage: "70"
+            queues: 
+                - { "id": 0, "weight": 1 }
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: vpn-site
+           
+    qos-scheduler-2-queues-tc2:
+        type: comcast.versa.nodes.QosScheduler
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            name: "2-queues-scheduler-tc2"
+            transmit_rate_percentage: "100"
+            guaranteed_rate_percentage: "40"
+            queues: 
+                - { "id": 0, "weight": 1 }
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: vpn-site
+           
+    qos-scheduler-map-2-queues:
+        type: comcast.versa.nodes.QosSchedulerMap
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            name: "2-queues-scheduler-map"
+            traffic_class:
+                - { "tc": "tc1", "scheduler": {get_property: [qos-scheduler-2-queues-tc1, name]} }
+                - { "tc": "tc2", "scheduler": {get_property: [qos-scheduler-2-queues-tc2, name]} }
+        relationships:
+            - type: comcast.sdwan.relationships.qos_scheduler_map_reference_qos_scheduler
+              target: qos-scheduler-2-queues-tc1
+            - type: comcast.sdwan.relationships.qos_scheduler_map_reference_qos_scheduler
+              target: qos-scheduler-2-queues-tc2
+
+    qos-wan-interface:
+        type: comcast.versa.nodes.QosInterface
+        properties:
+            template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+            organization_name: { get_input: organization_name }
+            name: "vni-0/1"
+            shaping_rate: 8000
+            #scheduler_map_name: { get_property: [qos-scheduler-map-2-queues, name] }
+        relationships:
+            - type: comcast.sdwan.relationships.interface_reference_scheduler_map
+              target: qos-scheduler-map-2-queues
+            - type: cloudify.relationships.connected_to
+              target: vpn-site

@@ -1,0 +1,22 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+  - imports.yaml
+  - vmd.yaml
+  - system-config.yaml
+
+node_templates:
+    uCPE:
+        type: comcast.versa.nodes.Device
+        properties:
+            name: { concat: ['Device-', {get_input: CLLI}] }
+            CLLI: { get_input: CLLI }
+            organization_name: { get_input: organization_name }
+            versa_management_domain: { get_input: versa_management_domain }
+            contact_information: { get_input: contact_information }
+            location: { get_input: location }
+            wan_interfaces: { get_input: wan_interfaces }
+        relationships:
+            - type: comcast.sdwan.relationships.ucpe_connected_to_vmd
+              target: vmd
+

@@ -1,0 +1,63 @@
+tosca_definitions_version: cloudify_dsl_1_3
+description: >
+    Cloudify Versa SD-WAN Service Model
+
+imports:
+  - imports.yaml
+  - device.yaml
+
+inputs:
+    versa_management_domain:
+        type: string
+        default: "Versa Management Domain 1"
+
+    provider_organization_name:
+        type: string
+        default: Comcast
+
+    organization_name:
+        type: string
+        default: starbucks
+
+    controllers:
+        default:
+            - name: stct-dv08xxxas01
+              type: VersaStagingController
+            - name: ctrl-dv08xxxac01
+              type: VersaController
+
+    CLLI:
+        type: string
+        default:
+            cloudify-uCPE
+
+    contact_information:
+        default:
+            phone: 4089663733
+            email: pattabi.ayyasami@comcast.com
+
+    location:
+        default:
+            name: "Sunnyvale Building 2"
+            site_name: "Sunnyvale Site"
+            address1: "Enterprise Way"
+            city: "Sunnyvale"
+            state: "CA"
+            country: "USA"
+            latitude: "30.123"
+            longitude: "35.123"
+
+    wan_interfaces:
+        default:
+            - name: vni-0/0
+              mtu: 1522
+              subinterfaces:
+                  - ip_address: 10.247.180.46
+                    subnet: 255.255.255.128
+                    cidr: 10.247.180.46/25
+                    gateway_address: 10.247.180.1
+                    subinterface: 0
+                    vlan_id: 0
+                    ip_version: ipv4
+                    assignment_mechanism: static
+                    network_name: { concat: ["WAN-", {get_input: CLLI}] }

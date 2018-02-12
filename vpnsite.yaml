@@ -1,0 +1,33 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+  - accept-all-firewall.yaml
+  - accept-all-multizone-firewall.yaml
+  - normal-firewall.yaml
+  - strict-firewall.yaml
+  - class-of-service.yaml
+
+node_templates:
+    uCPE: 
+        type: cloudify.nodes.Root
+
+    vpn-site:
+        type: comcast.sdwan.nodes.VPNSite
+        properties:
+            organization_name: { get_input: organization_name }
+            name: { concat: ['VPNSite-', {get_input: CLLI}, "-", {get_input: vpn_name}] }
+            description: VPN Site for VPN Service
+            vpn_name: { get_input: vpn_name }
+            vpn_id: { get_input: vpn_id }
+            vpnasn: { get_input: vpnasn }
+            vpn_role: { get_input: vpn_role }
+            internet_access: { get_input: internet_access }
+            encryption_type: { get_input: encryption_type }
+            CLLI: { get_input: CLLI }
+            lan_interfaces: { get_input: lan_interfaces }
+            interface_routing_protocols: {}
+        relationships:
+            - type: cloudify.relationships.depends_on
+              target: uCPE
+     
+

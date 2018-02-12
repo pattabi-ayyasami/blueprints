@@ -1,0 +1,24 @@
+tosca_definitions_version: cloudify_dsl_1_3
+description: >
+    Cloudify Versa SD-WAN Service Model
+
+imports:
+  - imports.yaml
+  - vmd.yaml
+  - vpn.yaml
+
+inputs:
+    controllers:
+        default:
+            - name: stct-dv08xxxas01
+              type: VersaStagingController
+            - name: ctrl-dv08xxxac01
+              type: VersaController
+
+    organization_name:
+        type: string
+        default: starbucks
+
+    vpn_name:
+        type: string
+        default: VPN-70

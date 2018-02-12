@@ -1,0 +1,593 @@
+imports:
+    - datatypes.yaml
+
+node_types:
+  comcast.versa.nodes.Root:
+    derived_from: cloudify.nodes.Root
+    properties:
+      versa_config:
+        type: comcast.sdwan.datatypes.VersaDirectorEndPoint
+
+
+  comcast.versa.nodes.ConfigurationTemplate:
+    derived_from: comcast.versa.nodes.Root
+    properties:
+      template_name:
+        type: string
+        default: {}
+      organization_name:
+        type: string
+        default: {}
+
+
+  comcast.versa.nodes.Organization:
+    derived_from: comcast.versa.nodes.Root
+    properties:
+      name:
+        type: string
+      parent_organization_name:
+        type: string
+      versa_management_domain:
+        type: string
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.organization_operations.create_organization
+        delete:
+          implementation: versa.versa.organization_operations.delete_organization
+
+  comcast.sdwan.nodes.Vpn:
+    derived_from: comcast.versa.nodes.Root
+    properties:
+      name:
+        type: string
+      organization_name:
+        type: string
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.vpn_operations.add_vpn_to_organization
+        delete:
+          implementation: versa.versa.vpn_operations.remove_vpn_from_organization
+
+      
+  comcast.versa.nodes.StagingTemplate:
+    derived_from: comcast.versa.nodes.Root
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+        default: "sdwan-staging"
+      controllers:
+        default: []
+      parent_organization_name:
+        type: string
+      device_firm_factor:
+        type: integer
+      wan_interfaces:
+        default: []
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.workflow_operations.create_staging_template
+        delete:
+          implementation: versa.versa.workflow_operations.delete_staging_template
+
+      
+  comcast.versa.nodes.PostStagingTemplate:
+    derived_from: comcast.versa.nodes.Root
+    properties:
+      name:
+        type: string
+      type:
+        type: string
+        default: "sdwan-post-staging"
+      controllers:
+        default: []
+      parent_organization_name:
+        type: string
+      device_firm_factor:
+        type: integer
+      device_type:
+        type: string
+        default: "full-mesh"
+      enable_redundant_pair:
+        type: boolean
+        default: false
+      wan_interfaces:
+        default: []
+      lan_interfaces:
+        default: []
+      solution_tier:
+        type: string
+        default: "advanced-sdwan"
+      bandwidth:
+        type: integer
+      is_analytics_enabled:
+        type: boolean
+        default: true
+      analytics_cluster:
+        type: string
+      is_primary:
+        type: boolean
+        default: true
+      custom_params:
+        default: []
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.workflow_operations.create_post_staging_template
+        delete:
+          implementation: versa.versa.workflow_operations.delete_post_staging_template
+
+
+  comcast.versa.nodes.DeviceGroup:
+    derived_from: comcast.versa.nodes.Root
+    properties:
+      name:
+        type: string
+      organization_name:
+        type: string
+      enable_two_factor_authentication:
+        type: boolean
+        default: false
+      email:
+        type: string
+        default: ""
+      phone:
+        type: string
+        default: ""
+      enable_staging_url:
+        type: boolean
+        default: true
+      staging_type:
+        type: string
+        default: "staging"
+      staging_controller:
+        type: string
+        default: ""
+      staging_controller_vpn_profile_name:
+        type: string
+        default: ""
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.device_group_operations.create_device_group
+        delete:
+          implementation: versa.versa.device_group_operations.delete_device_group
+
+
+  comcast.versa.nodes.VMD:
+    derived_from: comcast.versa.nodes.Root
+    properties:
+      name:
+        type: string
+      versa_director_components:
+        description: List of Versa Director and/or Versa Director Proxy
+      controllers:
+        description: List of controllers (StagingController, Controller) known to the Versa Director
+      
+  comcast.versa.nodes.Device:
+    derived_from: comcast.versa.nodes.Root
+    properties:
+      name:
+        type: string
+        description: Recommended format ce-<CLLI>.ucpe.comcast.com
+      CLLI:
+        type: string
+      contact_information:
+        type: comcast.sdwan.datatypes.ContactInformation
+        description: "Contact information email, phone etc"
+      organization_name:
+        type: string
+      versa_management_domain:
+        type: string
+      operation_role:
+        type: string
+        required: false
+        description: Operational role of the device in the comcast network
+        default: "uCPE"
+      capacity_class:
+        type: string
+        required: false
+        description: Capacity class of the uCPE device - Small/Medium/Large
+        default: "Small"
+      location:
+        type: comcast.sdwan.datatypes.Location
+      device_firm_factor:
+        type: integer
+        default: 4
+      bandwidth:
+        type: string
+        default: 100
+      wan_interfaces:
+        description: "List of WAN Interfaces"
+        default: []
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.device_operations.create_device
+        delete:
+          implementation: versa.versa.device_operations.delete_device
+
+
+  comcast.sdwan.nodes.VPNSite:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      CLLI:
+        type: string
+        description: uCPE device CLLI
+      name:
+        type: string
+        description: Name of the VPN Site
+      description:
+        type: string
+      vpn_name:
+        type: string
+      vpn_id:
+        type: string
+        description: VPN ID in Versa
+      vpnasn:
+        type: string
+      vpn_role:
+        type: string
+        description: Hub/Spoke
+      internet_access:
+        type: string
+        description: None/Local/SharedLocal
+      encryption_type:
+        description: 3DES/AES128/AES192/AES256
+      
+      firewall_configuration:
+        description: references a firewall configuration
+        required: false
+      qos_queing_configuration:
+        description: references a qos queing configuration
+        required: false
+      static_routes:
+        description: Static routes configuration
+        required: false
+
+      lan_interfaces:
+        description: List of LAN interfaces
+      
+      interface_routing_protocols:
+        description: Routing protocols configuration information
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.vpnsite_operations.create_vpn_site
+        delete:
+          implementation: versa.versa.vpnsite_operations.delete_vpn_site
+
+
+  comcast.versa.nodes.QosProfile:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      name:
+        required : true
+        default: {}
+      forwarding-class:
+        default: "fc_af"
+      loss-priority:
+        default: "low"
+      dscp-rw-enable:
+        default: "yes"
+      dot1p-rw-enable:
+        default: "no"
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.class_of_service_operations.create_qos_profile
+        delete:
+          implementation: versa.versa.class_of_service_operations.delete_qos_profile
+
+      
+  comcast.versa.nodes.QosPolicy:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      name:
+        type: string
+        required: true
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.class_of_service_operations.create_qos_policy
+        delete:
+          implementation: versa.versa.class_of_service_operations.delete_qos_policy
+
+
+  comcast.versa.nodes.QosPolicyRule:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      name:
+        type: string
+        required: true
+      policy_name:
+        type: string
+        required: false
+        default: "Will be derived via relationship"
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.class_of_service_operations.create_qos_policy_rule
+        delete:
+          implementation: versa.versa.class_of_service_operations.delete_qos_policy_rule
+
+
+  comcast.versa.nodes.QosScheduler:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      name:
+        type: string
+      transmit_rate_percentage:
+        type: string
+      guaranteed_rate_percentage:
+        type: string
+      queues:
+        description: "List of queues. {id, weight} properties"
+        default: []
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.class_of_service_operations.create_qos_scheduler
+        delete:
+          implementation: versa.versa.class_of_service_operations.delete_qos_scheduler
+
+
+  comcast.versa.nodes.QosSchedulerMap:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      name:
+        type: string
+      traffic_class:
+         default: []
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.class_of_service_operations.create_qos_scheduler_map
+        delete:
+          implementation: versa.versa.class_of_service_operations.delete_qos_scheduler_map
+
+
+  comcast.versa.nodes.QosInterface:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      name:
+        type: string
+      shaping_rate:
+        type: integer
+      scheduler_map_name:
+        type: string
+        required: false
+        default: "will be derived via relationship"
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.class_of_service_operations.associate_qos_interface
+        delete:
+          implementation: versa.versa.class_of_service_operations.disassociate_qos_interface
+
+
+  comcast.versa.nodes.AccessPolicy:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      name:
+        type: string
+        default: "Base-VPN-Internet-Access-Policy"
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.firewall_operations.create_access_policy
+        delete:
+          implementation: versa.versa.firewall_operations.delete_access_policy
+
+
+  comcast.versa.nodes.AccessPolicyRule:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      policy_name:
+        type: string
+      source_zone_list:
+        default: []
+      destination_zone_list:
+        default: []
+      predefined_services:
+        default: []
+        required: false
+      custom_services:
+        default: []
+        required: false
+      action:
+        type: string
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.firewall_operations.create_access_policy_rule
+
+
+  comcast.versa.nodes.URLFilter:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      name:
+        type: string
+      default_action:
+        required: false
+      cloud_lookup_mode:
+        type: string
+        default: "never"
+        required: false
+      blacklist:
+        default: {}
+        required: false
+      whitelist:
+        default: {}
+        required: false
+      category_action_map:
+        default: {}
+        required: false
+      reputation_action_map:
+        default: {}
+        required: false
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: versa.versa.firewall_operations.create_url_filter
+        delete:
+          implementation: versa.versa.firewall_operations.delete_url_filter
+
+
+  comcast.versa.nodes.VNFManager:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      ip_addresses:
+        default: []
+      management_interfaces:
+        default: []
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: versa.versa.system_configuration_operations.update_vnf_manager
+
+
+  comcast.versa.nodes.Session:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      reevaluate_reverse_flow:
+        type: boolean
+        default: true
+      send_icmp_unreachable:
+        type: boolean
+        default: false
+      tcp_adjust_mss:
+        default: {}
+      tcp_send_reset:
+        type: boolean
+        default: false
+      host_bound_service:
+        type: boolean
+        default: false
+      check_tcp_syn:
+        type: boolean
+        default: false
+      allow_unsupported_protocol:
+        type: boolean
+        default: true
+      tcp_secure_reset:
+        type: boolean
+        default: false
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: versa.versa.system_configuration_operations.update_session
+
+
+  comcast.versa.nodes.SystemServices:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      www:
+        type: string
+        default: "disabled"
+      cli-ssh:
+        type: string
+        default: "disabled"
+      ssh:
+        type: string
+        default: "disabled"
+      sftp:
+        type: string
+        default: "disabled"
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: versa.versa.system_configuration_operations.update_services
+
+
+  comcast.versa.nodes.ExternalAAA:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      action:
+        type: string
+        default: "authentication"
+      use_remote_group:
+        type: boolean
+        default: false
+      auth_order:
+        type: string
+        default: "local-then-remote"
+      servers:
+        default: []
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: versa.versa.system_configuration_operations.update_external_aaa
+
+
+  comcast.versa.nodes.NTP:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      servers:
+        default: []
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: versa.versa.system_configuration_operations.update_ntp_configuration
+
+
+  comcast.versa.nodes.TimeZone:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      time_zone:
+        type: string
+        default: "America/Los_Angeles"
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: versa.versa.system_configuration_operations.update_time_zone
+
+
+  comcast.versa.nodes.ServiceOptions:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      buffer_parameters:
+        default: {}
+      shaping:
+        default: {} 
+      forwarding_queues:
+        type: string
+        default: "16"
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: versa.versa.system_configuration_operations.update_service_options
+
+
+  comcast.sdwan.nodes.FirewallConfiguration:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      firewall_option:
+        description: enabled / disabled
+      firewall_type:
+        description: standard / custom / extended_manual
+      standard_firewall_profile:
+        description: accept_all / access_all_multi_zone / normal / strict / not_applicable. Should implicitly create the appropriate Firewall Profile 
+      nonstandard_firewall_profile:
+        description: firewall profile
+
+
+  comcast.sdwan.nodes.FirewallProfile:
+    derived_from: comcast.versa.nodes.ConfigurationTemplate
+    properties:
+      name:
+        type: string
+      rules:
+        default: []
+        description: List of Rules (FirewallRule)
+      zones:
+        default: []
+        description: list of zones (FirewallZone)

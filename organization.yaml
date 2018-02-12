@@ -1,0 +1,12 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+node_templates:
+    organization-1:
+        type: comcast.versa.nodes.Organization
+        properties:
+            name: { get_input: organization_name }
+            parent_organization_name: { get_input: provider_organization_name }
+            versa_management_domain: { get_input: versa_management_domain }
+        relationships:
+            - type: comcast.sdwan.relationships.organization_connected_to_vmd
+              target: vmd

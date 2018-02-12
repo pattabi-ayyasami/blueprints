@@ -1,0 +1,20 @@
+
+relationships:
+    comcast.sdwan.relationships.organization_connected_to_vmd:
+        derived_from: cloudify.relationships.connected_to
+    
+    comcast.sdwan.relationships.ucpe_connected_to_vmd:
+        derived_from: cloudify.relationships.connected_to
+    
+    comcast.sdwan.relationships.qos_scheduler_map_reference_qos_scheduler:
+        derived_from: cloudify.relationships.connected_to
+
+    comcast.sdwan.relationships.interface_reference_scheduler_map:
+        derived_from: cloudify.relationships.connected_to
+
+    comcast.sdwan.relationships.qos_policy_rule_contained_in_qos_policy:
+        derived_from: cloudify.relationships.contained_in
+    
+    comcast.sdwan.relationships.qos_policy_rule_reference_qos_profile:
+        derived_from: cloudify.relationships.connected_to
+

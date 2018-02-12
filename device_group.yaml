@@ -1,0 +1,16 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+node_templates:
+    device-group:
+        type: comcast.versa.nodes.DeviceGroup
+        properties:
+            name: { concat: ['DeviceGroup-', { get_input: device_id }] }
+            organization_name: { get_input: parent_organization_name }
+            email: pattabi.ayyasami@comcast.com
+            phone: "4081234567"
+            enable_two_factor_authentication: true
+            enable_staging_url: true
+            staging_type: staging
+            staging_controller: { get_input: staging_controller }
+            staging_controller_vpn_profile_name: { concat: ['Internet-', { get_input: staging_controller }, '-StagingIpsec'] }
+            

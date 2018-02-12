@@ -1,0 +1,83 @@
+tosca_definitions_version: cloudify_dsl_1_3
+description: >
+    Cloudify Versa SD-WAN Service Model
+
+imports:
+  - imports.yaml
+  - vpnsite.yaml
+
+inputs:
+   
+    #########################
+    # Versa Management Domain
+    #########################
+
+    versa_management_domain:
+        type: string
+        default: "Versa Management Domain 1"
+
+    provider_organization_name:
+        type: string
+        default: Comcast
+
+    organization_name:
+        type: string
+        default: starbucks
+
+    controllers:
+        default:
+            - name: stct-dv08xxxas01
+              type: VersaStagingController
+            - name: ctrl-dv08xxxac01
+              type: VersaController
+
+    ### uCPE Device CLLI
+
+    CLLI:
+        type: string
+        default:
+            cloudify-uCPE
+
+
+    #######################
+    # VPNSite specific
+    #######################
+
+    vpn_name:
+        type: string
+        default: VPN-70
+
+    vpn_id:
+        type: string
+        default: "102"
+
+    vpnasn:
+        type: string
+        default: "65535"
+
+    vpn_role:
+        type: string
+        default: "Hub"
+
+    internet_access:
+        type: string
+        default: Local
+
+    encryption_type:
+        type: string
+        default: AES192
+
+    lan_interfaces:
+        default:
+          -  name: "vni-0/2"
+             mtu: 1522,
+             subinterfaces:
+               - network_name: { concat: ['LAN-', {get_property: [vpn-site, vpn_name]}] }
+                 ip_address: 192.168.10.71
+                 subnet: 255.255.255.128
+                 cidr: 192.168.10.71/24
+                 gateway_address: 192.168.10.1
+                 subinterface: 71
+                 vlan_id: 71
+                 ip_version: ipv4
+                 assignment_mechanism: static

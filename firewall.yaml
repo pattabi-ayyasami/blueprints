@@ -1,0 +1,184 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+node_templates:
+    vpn-site1:
+       type: cloudify.nodes.Root
+
+    vpn-none:
+       type: comcast.versa.nodes.AccessPolicy
+       properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: "VPN-No-Restrictions"
+       relationships:
+            - type: cloudify.relationships.connected_to
+              target: vpn-site
+
+    WAN-to-VPN-Trust-1:
+        type: comcast.versa.nodes.AccessPolicyRule
+        properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: ["WAN-to-", {get_input: vpn_name}] }
+           description: { concat: ["VPN None: Allow WAN to VRF ", {get_input: vpn_name}] }
+           policy_name: { get_property: ["vpn-none", name] }
+           source_zone_list: ["ptvi"]
+           destination_zone_list: [ { concat: ["Intf-", "LAN-", {get_input: vpn_name}, "-Trust"] } ]
+           action: allow
+        relationships:
+            - type: cloudify.relationships.connected_to
+              target: vpn-none
+
+    VPN-to-WAN-Trust-1:
+        type: comcast.versa.nodes.AccessPolicyRule
+        properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: [{get_input: vpn_name}, "-to-WAN"] }
+           description: { concat: ["VPN None: Allow VRF ", {get_input: vpn_name}, " to WAN"] }
+           policy_name: { get_property: ["vpn-none", name] }
+           source_zone_list: [ { concat: ["Intf-", "LAN-", {get_input: vpn_name}, "-Trust"] } ]
+           destination_zone_list: ["ptvi"]
+           action: allow
+        relationships:
+           - type: cloudify.relationships.connected_to
+             target: vpn-none
+
+    #############################################################################
+
+    vpn-private-site:
+       type: comcast.versa.nodes.AccessPolicy
+       properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: "VPN-Private-Site"
+       relationships:
+            - type: cloudify.relationships.connected_to
+              target: vpn-site
+
+    WAN-to-VPN-Trust-2:
+        type: comcast.versa.nodes.AccessPolicyRule
+        properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: ["WAN-to-", {get_input: vpn_name}] }
+           description: { concat: ["VPN Private Site: Disallow WAN to VRF ", {get_input: vpn_name}] }
+           policy_name: { get_property: ["vpn-private-site", name] }
+           source_zone_list: ["ptvi"]
+           destination_zone_list: [ { concat: ["Intf-", "LAN-", {get_input: vpn_name}, "-Trust"] } ]
+           action: reject
+        relationships:
+           - type: cloudify.relationships.connected_to
+             target: vpn-private-site
+
+    VPN-to-WAN-Trust-2:
+        type: comcast.versa.nodes.AccessPolicyRule
+        properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: [{get_input: vpn_name}, "-to-WAN"] }
+           description: { concat: ["VPN Private Site: Allow VRF ", {get_input: vpn_name}, " to WAN"] }
+           policy_name: { get_property: ["vpn-private-site", name] }
+           source_zone_list: [ { concat: ["Intf-", "LAN-", {get_input: vpn_name}, "-Trust"] } ]
+           destination_zone_list: ["ptvi"]
+           action: allow
+         
+        relationships:
+           - type: cloudify.relationships.connected_to
+             target: vpn-private-site
+
+
+    #############################################################################
+    internet-none:
+       type: comcast.versa.nodes.AccessPolicy
+       properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: "Internet-No-Restrictions"
+       relationships:
+            - type: cloudify.relationships.connected_to
+              target: vpn-site
+
+
+    Internet-to-VPN-Trust-1:
+        type: comcast.versa.nodes.AccessPolicyRule
+        properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: ["Internet-to-", {get_input: vpn_name}] }
+           description: { concat: ["Internet None: Allow Internet to VRF ", {get_input: vpn_name}] }
+           policy_name: { get_property: ["internet-none", name] }
+           source_zone_list: [ { concat: ["RTI-", "WAN-", {get_input: CLLI}, "-Trust"] } ]
+           destination_zone_list: [ { concat: ["Intf-", "LAN-", {get_input: vpn_name}, "-Trust"] } ]
+           action: allow
+        relationships:
+           - type: cloudify.relationships.connected_to
+             target: internet-none
+
+    VPN-to-Internet-Trust-1:
+        type: comcast.versa.nodes.AccessPolicyRule
+        properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: [{get_input: vpn_name}, "-to-Internet"] }
+           description: { concat: ["Internet None: Allow VRF ", {get_input: vpn_name}, " to Internet"] }
+           policy_name: { get_property: ["internet-none", name] }
+           source_zone_list: [ { concat: ["Intf-", "LAN-", {get_input: vpn_name}, "-Trust"] } ]
+           destination_zone_list: [ { concat: ["RTI-", "WAN-", {get_input: CLLI}, "-Trust"] } ]
+           action: allow
+        relationships:
+           - type: cloudify.relationships.connected_to
+             target: internet-none
+
+    #############################################################################
+    internet-normal:
+       type: comcast.versa.nodes.AccessPolicy
+       properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: "Internet-Normal"
+       relationships:
+            - type: cloudify.relationships.connected_to
+              target: vpn-site
+
+    Internet-to-VPN-Trust-2:
+        type: comcast.versa.nodes.AccessPolicyRule
+        properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: ["Internet-to-", {get_input: vpn_name}] }
+           description: { concat: ["Internet None: Allow Internet to VRF ", {get_input: vpn_name}] }
+           policy_name: { get_property: ["internet-normal", name] }
+           source_zone_list: [ { concat: ["RTI-", "WAN-", {get_input: CLLI}, "-Trust"] } ]
+           destination_zone_list: [ { concat: ["Intf-", "LAN-", {get_input: vpn_name}, "-Trust"] } ]
+           action: deny
+        relationships:
+           - type: cloudify.relationships.connected_to
+             target: internet-normal
+
+    VPN-to-Internet-Trust-2:
+        type: comcast.versa.nodes.AccessPolicyRule
+        properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: { concat: [{get_input: vpn_name}, "-to-Internet"] }
+           description: { concat: ["Internet None: Allow VRF ", {get_input: vpn_name}, " to Internet"] }
+           policy_name: { get_property: ["internet-normal", name] }
+           source_zone_list: [ { concat: ["Intf-", "LAN-", {get_input: vpn_name}, "-Trust"] } ]
+           destination_zone_list: { concat: ["RTI-", "WAN-", {get_input: CLLI}, "-Trust"] }
+           action: allow
+        relationships:
+           - type: cloudify.relationships.connected_to
+             target: internet-normal
+
+    #############################################################################
+    internet-strict:
+       type: comcast.versa.nodes.AccessPolicy
+       properties:
+           template_name: { concat: ["PostStaging-", {get_input: CLLI}] }
+           organization_name: { get_input: organization_name }
+           name: "Internet-Strict"
+       relationships:
+            - type: cloudify.relationships.connected_to
+              target: vpn-site
+

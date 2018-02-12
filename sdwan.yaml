@@ -1,0 +1,35 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+node_templates:
+
+    vmd:
+        type: comcast.versa.nodes.VMD
+        properties:
+            name: "Versa Management Domain 1"
+            versa_director_components:
+                - name: VersaDirector1
+                  type: VersaDirector
+                  management_address: 96.116.57.104
+                  software_version: 16.1R1
+                  proxy_endpoint: 96.116.57.31
+                  credentials:
+                      client_id: voae__rest
+                      client_secret: asrevnet_123
+                      username: Administrator
+                      password: nfV!Nads123Versa
+            controllers: { get_input: controllers }
+
+
+    uCPE:
+        type: comcast.versa.nodes.Device
+        properties:
+            name: { concat: ['Device-', {get_input: CLLI}] }
+            CLLI: { get_input: CLLI }
+            organization_name: { get_input: organization_name }
+            versa_management_domain: { get)input: versa_management_domain }
+            contact_information: { get_input: contact_information }
+            location: { get_input: location }
+            wan_interfaces: { get_input: wan_interfaces }
+        relationships:
+            - type: comcast.versa.relationships.ucpe_connected_to_vmd
+              target: vmd

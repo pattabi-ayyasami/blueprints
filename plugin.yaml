@@ -1,0 +1,10 @@
+plugins:
+    versa:
+        #package_name: "versa-plugin"
+        #package_version: "1.0"
+        executor: central_deployment_agent
+        install: false
+        #supported_platform: linux_x86_64
+        #distribution: ubuntu
+        #distribution_release: trusty
+        #distribution_version: "14.04"
